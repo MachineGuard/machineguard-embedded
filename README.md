@@ -101,15 +101,16 @@ El DevKit V1 es un modelo no oficial de Wokwi. Lint no ejecuta la simulación ni
 valida corrientes. El piezo virtual no autoriza conectar un buzzer activo o inductivo
 directamente: su modelo, corriente y etapa de manejo requieren revisión humana.
 
-La red virtual pública no llega a Edge local. F6b decidirá la vía de simulación
-disponible sin publicar claves ni usar túneles. Una prueba nativa o un emisor de
-PC no demuestra que el ESP32 virtual se comunicó por Wi-Fi.
+La simulación web offline puede cargar el binario sin guardar el proyecto; ver
+`simulation/README.md`. La red virtual pública no llega a Edge local. El ensayo
+nativo en PC es independiente y no acredita comunicación Wi-Fi del ESP32 virtual.
 
 ## Límites de esta base
 
-Firmware y lógica compilados/probados en PC; los adaptadores de DHT, Wi-Fi, TLS,
-NTP y GPIO todavía necesitan F6b y hardware. HTTP limita conexión/lectura, cabecera
-a 2048 B y cuerpo a 1536 B; no acepta chunked ni redirecciones. Timeout nominal
-6 s, conexión/lectura 1,5 s y handshake TLS 3 s, además del DNS acotado del core.
-Un fallo de red puede retrasar entrega, pero no posee ni modifica la cola del nodo.
-La latencia real, memoria dinámica y temporización eléctrica no están medidas.
+La simulación offline ejecutó DHT, GPIO y botón; Wi-Fi, TLS, NTP y persistencia NVS
+entre reinicios de CPU siguen pendientes en un banco adecuado. HTTP limita
+cabecera a 2048 B y cuerpo a 1536 B; no acepta chunked ni redirecciones. Conexión
+y lectura usan 1,5 s; handshake TLS, 3 s. Los 6 s del intercambio son un presupuesto
+cooperativo: DNS y escrituras internas del core pueden superarlo. No es un máximo
+global demostrado. La tarea de red no posee ni modifica la cola del nodo.
+Las medidas virtuales no acreditan memoria, latencia ni temporización físicas.

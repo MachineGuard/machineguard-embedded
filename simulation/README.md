@@ -1,4 +1,4 @@
-# Perfil electrónico offline preparado
+# Perfil electrónico offline
 
 Este perfil no ejecuta red ni incluye secretos; activa el piezo opcional y
 telemetría de sensor, botón y recursos. Compilar desde la raíz:
@@ -7,10 +7,19 @@ telemetría de sensor, botón y recursos. Compilar desde la raíz:
 ./scripts/Build-Firmware.ps1 -OfflineSimulation
 ```
 
-El resultado queda en `build/simulation-offline/`. Para una herramienta Wokwi
-ya licenciada, abre esta carpeta `simulation/`: `wokwi.toml` señala ese binario,
-y el circuito es el mismo de F6a con analizador lógico adicional. El build falla
-si hay `secrets.h`. No reutilices el perfil para operación ni añadas credenciales.
+El resultado queda en `build/simulation-offline/`. El build falla si hay
+`secrets.h`. No reutilices el perfil para operación ni añadas credenciales.
+
+En Wokwi web, abre una plantilla ESP32 sin guardar, copia `diagram.json` de esta
+carpeta al editor y usa F1 → `Upload Firmware and Start Simulation` para cargar
+`MachineGuardNode.ino.bin`. No pulses Save ni Share. Este flujo ejecutó el binario
+multifichero compilado localmente sin cuenta. El botón Restart recompila el sketch
+del editor: para repetir el binario, vuelve a cargarlo con F1. Una ejecución nueva
+volvió a contador de arranque 1; no demuestra conservación NVS/RTC.
+
+Para Wokwi local/CI se necesita la licencia/token correspondiente; `wokwi.toml`
+señala el binario y `offline-scenario.yaml` prepara la automatización. Ese escenario
+YAML no fue ejecutado: la comprobación web se hizo con los controles del componente.
 
 `offline-scenario.yaml` prepara cambios reales del componente virtual DHT22 y
 pulsaciones cortas/largas. Serial permite contrastar adquisición, mute y hold;
@@ -19,10 +28,10 @@ virtual; mídelo aparte del tiempo de pared de la herramienta. `SIM_RESOURCES`
 expone heap libre/mínimo y mínimo de pila del loop en bytes. La tarea de IO no
 arranca en este perfil: `IO_STACK_NOT_STARTED=1` no es una medición de su pila.
 
-Estado de esta entrega: archivos compilados/preparados, ejecución electrónica
-pendiente de licencia. Sin NTP virtual, reset/NVS virtual ni datos físicos
-medidos. Para fallos DHT deberá desconectarse su DATA en una copia del circuito;
-no se inventa un fallo del componente cambiando solo su temperatura.
+La web ejecutó cambios de temperatura/humedad, pulsación corta/mute y hold, y
+fallo DHT al desconectar DATA en una copia del circuito. Restaurarlo en otra
+ejecución recuperó las lecturas. `SIM_BOOT` permite observar contador/identidad;
+sin NTP virtual, no se acredita sincronización de reloj ni reset con NVS conservada.
 
 Reinicio de simulación y reinicio de CPU pueden conservar memorias diferentes.
 Antes de afirmar persistencia, documenta qué conserva la herramienta: NVS,
