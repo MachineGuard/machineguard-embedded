@@ -11,6 +11,7 @@
 #include <cstring>
 #include <iostream>
 #include <memory>
+#include <future>
 #include <string>
 
 namespace {
@@ -59,6 +60,8 @@ Response post(unsigned port,const std::string& credential,const char* payload) {
 }
 int main() {
     mg::Settings settings;std::unique_ptr<mg::Node> node;std::string credential;unsigned port=0;
+    struct Flight { Response response;std::string payload;mg::Sample sample;uint32_t ticket;long long wallMs; };
+    std::future<Flight> flight;
     std::string line;
     while(std::getline(std::cin,line)) {
         if(line.size()>2048)return 2;
@@ -85,16 +88,32 @@ int main() {
             output["acquired"]=started && node->finishRead(now,command["temperature"].as<float>(),command["humidity"].as<float>(),clock);
         } else if(action=="tick") {
             node->tick(command["now"].as<uint32_t>(),command["pressed"]|false,command["connected"]|false);
-        } else if(action=="send") {
+        } else if(action=="send" || action=="sendAsync") {
             mg::Sample sample{};uint32_t ticket=0;const uint32_t now=command["now"].as<uint32_t>();
             bool started=node->beginSend(now,sample,ticket);output["started"]=started;
             if(started) {
                 char payload[mg::PayloadBytes]{};if(!mg::encodePayload(settings.deviceCode,sample,payload,sizeof payload))return 5;
+                if(action=="sendAsync") {
+                    if(flight.valid())return 7;
+                    flight=std::async(std::launch::async,[port,key=credential,body=std::string(payload),sample,ticket] {
+                        const auto started=std::chrono::steady_clock::now();auto response=post(port,key,body.c_str());
+                        return Flight{std::move(response),body,sample,ticket,std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()-started).count()};
+                    });
+                } else {
                 const auto begin=std::chrono::steady_clock::now();auto response=post(port,credential,payload);
                 auto outcome=mg::classifyResponse(response.status,response.body.data(),response.body.size(),settings.deviceCode,sample);
                 if(!node->complete(now,ticket,outcome))return 5;
                 output["httpStatus"]=response.status;output["outcome"]=name(outcome);output["payload"]=std::string(payload);
                 output["wallMs"]=std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()-begin).count();
+                }
+            }
+        } else if(action=="collect") {
+            const bool ready=flight.valid() && flight.wait_for(std::chrono::milliseconds(0))==std::future_status::ready;
+            output["ready"]=ready;
+            if(ready) {
+                auto sent=flight.get();auto outcome=mg::classifyResponse(sent.response.status,sent.response.body.data(),sent.response.body.size(),settings.deviceCode,sent.sample);
+                if(!node->complete(command["now"].as<uint32_t>(),sent.ticket,outcome))return 5;
+                output["httpStatus"]=sent.response.status;output["outcome"]=name(outcome);output["payload"]=sent.payload;output["wallMs"]=sent.wallMs;
             }
         } else if(action=="state") {
             if(node->oldest()) {char payload[mg::PayloadBytes]{};if(!mg::encodePayload(settings.deviceCode,*node->oldest(),payload,sizeof payload))return 5;output["oldestPayload"]=std::string(payload);}
