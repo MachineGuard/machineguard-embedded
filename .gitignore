@@ -1,0 +1,11 @@
+firmware/MachineGuardNode/secrets.h
+build/
+.arduino/
+.vscode/
+*.obj
+*.pdb
+*.ilk
+*.exe
+*.elf
+*.bin
+*.map

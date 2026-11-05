@@ -1,0 +1,4 @@
+[wokwi]
+version = 1
+firmware = "build/esp32/MachineGuardNode.ino.bin"
+elf = "build/esp32/MachineGuardNode.ino.elf"
