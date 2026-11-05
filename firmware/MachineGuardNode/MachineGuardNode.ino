@@ -18,6 +18,7 @@ RTC_NOINIT_ATTR mg::RetainedMemory retained;
 uint64_t bootCounter=0;
 bool ioEnabled=false,buzzerAttached=false,previousBuzzer=false;
 uint32_t lastSummary=0;
+uint64_t previousShortPresses=0,previousLongPresses=0;
 
 bool identity(char (&id)[65],bool& resetKnown,uint32_t& resetPending) {
     Preferences store;
@@ -44,6 +45,7 @@ void rememberPending() {
 
 void setup() {
     Serial.begin(115200);
+    if(config::SimulationProfile)Serial.println("PROFILE=SIMULATION_OFFLINE; no network or real credentials");
     for(int pin:{config::GreenPin,config::AmberPin,config::RedPin,config::BluePin,config::BuzzerPin}) {pinMode(pin,OUTPUT);digitalWrite(pin,LOW);}
     pinMode(config::ButtonPin,INPUT_PULLUP);dht.begin();
     if(config::EnableBuzzer)buzzerAttached=ledcAttach(config::BuzzerPin,4000,8);
@@ -72,7 +74,11 @@ void loop() {
         // One physical DHT transaction. Humidity comes from that same frame, not a second sample.
         const float temperature=dht.readTemperature(false,true);
         const float humidity=dht.readHumidity(false);
-        node->finishRead(millis(),temperature,humidity,io.captureTime());
+        const bool acquired=node->finishRead(millis(),temperature,humidity,io.captureTime());
+        if(config::SimulationProfile) {
+            if(acquired)Serial.printf("SIM_SENSOR_OK T=%.1f H=%.1f tick_ms=%u\n",double(temperature),double(humidity),unsigned(millis()));
+            else Serial.printf("SIM_SENSOR_FAILED tick_ms=%u\n",unsigned(millis()));
+        }
     }
     if(ioEnabled) {
         mg::Sample copy{};uint32_t ticket=0;
@@ -84,11 +90,18 @@ void loop() {
     digitalWrite(config::RedPin,lights.red);digitalWrite(config::BluePin,lights.blue);
     if(buzzerAttached && lights.buzzer!=previousBuzzer) {ledcWriteTone(config::BuzzerPin,lights.buzzer?4000:0);previousBuzzer=lights.buzzer;}
     if(node->valid())rememberPending();
+    if(config::SimulationProfile) {
+        const auto& stats=node->stats();
+        if(previousShortPresses!=stats.shortPresses) {previousShortPresses=stats.shortPresses;Serial.printf("SIM_SHORT count=%llu buzzer=%u\n",static_cast<unsigned long long>(previousShortPresses),unsigned(lights.buzzer));}
+        if(previousLongPresses!=stats.longPresses) {previousLongPresses=stats.longPresses;Serial.printf("SIM_HOLD count=%llu\n",static_cast<unsigned long long>(previousLongPresses));}
+    }
     if(mg::elapsed(millis(),lastSummary,5000)) {
         lastSummary=millis();const auto& stats=node->stats();
         Serial.printf("RAM=%u LOCAL_PENDING=%llu CORE_CONFIRMED=%llu RAM_OVERFLOW=%llu TERMINAL=%llu\n",
             unsigned(node->pending()),static_cast<unsigned long long>(stats.localPending),static_cast<unsigned long long>(stats.confirmed),
             static_cast<unsigned long long>(stats.ramOverflow),static_cast<unsigned long long>(stats.discarded+stats.quarantined+stats.edgeOverflow+stats.rejected));
+        if(config::SimulationProfile)Serial.printf("SIM_RESOURCES heap_free=%u heap_min=%u loop_stack_min_bytes=%u IO_STACK_NOT_STARTED=%u\n",
+            unsigned(ESP.getFreeHeap()),unsigned(ESP.getMinFreeHeap()),unsigned(uxTaskGetStackHighWaterMark(nullptr)),unsigned(io.stackFreeMinimumBytes()==0));
     }
     delay(1); // Yield only; all long network work belongs to the single IO task.
 }

@@ -29,6 +29,7 @@ struct Stats {
     uint64_t acquired=0,sensorFailures=0,ramOverflow=0,localPending=0,confirmed=0,
         discarded=0,quarantined=0,edgeOverflow=0,rejected=0,rejectionEvidenceEvicted=0,
         retries=0,authFailures=0,invalidReceipts=0,clockRegressions=0,staleCompletions=0;
+    uint64_t shortPresses=0,longPresses=0;
     uint32_t resetPendingDiscarded=0;
     bool resetLossKnown=false,sequenceExhausted=false;
 };

@@ -81,10 +81,10 @@ void Node::tick(uint32_t now,bool pressed,bool networkConnected) {
     if(button_!=rawButton_ && elapsed(now,rawChanged_,settings_.debounceMs)) {
         button_=rawButton_;
         if(button_) {pressedAt_=now;longSent_=false;}
-        else if(!longSent_) {manual_=true;if(alarm_)muted_=true;}
+        else if(!longSent_) {manual_=true;++stats_.shortPresses;if(alarm_)muted_=true;}
     }
     if(button_ && !longSent_ && elapsed(now,pressedAt_,settings_.holdMs)) {
-        pairing_=true;pairStarted_=now;longSent_=true;
+        pairing_=true;pairStarted_=now;longSent_=true;++stats_.longPresses;
     }
     if(pairing_ && elapsed(now,pairStarted_,settings_.pairingMs))pairing_=false;
 }

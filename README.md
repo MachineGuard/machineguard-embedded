@@ -1,5 +1,12 @@
 # MachineGuard Embedded
 
+F6b añade un driver de contrato de PC que comparte `Node`, serialización y `Ack`
+con el firmware: `scripts/Build-NativeDriver.ps1` lo compila para Windows x64.
+Su transporte solo permite HTTP en `127.0.0.1` para ensayos desechables; no es
+el adaptador Wi-Fi/TLS del ESP32 ni demuestra enlace virtual con Edge. Recibe
+configuración por stdin y nunca imprime la credencial. No usarlo como producto.
+El perfil electrónico offline y sus pasos preparados están en `simulation/`.
+
 Firmware ESP32 DevKit V1 de 30 pines con DHT22. Mide cada 10 s y entrega a Edge
 usando solo la credencial de su nodo. Edge conserva SQLite y la credencial de
 gateway hacia Core. Este incremento prepara la simulación; aún no acredita Wi-Fi

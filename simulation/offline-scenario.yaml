@@ -1,0 +1,47 @@
+name: 'Prepared offline sensor/button check; not executed in F6b'
+version: 1
+author: 'MachineGuard'
+steps:
+  - wait-serial: 'PROFILE=SIMULATION_OFFLINE'
+  - delay: 2500ms
+  - set-control:
+      part-id: dht
+      name: temperature
+      value: 25
+  - set-control:
+      part-id: dht
+      name: humidity
+      value: 80
+  - delay: 10000ms
+  - wait-serial: 'SIM_SENSOR_OK T=25.0 H=80.0'
+  - set-control:
+      part-id: button
+      name: pressed
+      value: 1
+  - delay: 200ms
+  - set-control:
+      part-id: button
+      name: pressed
+      value: 0
+  - wait-serial: 'SIM_SHORT count=1 buzzer=0'
+  - set-control:
+      part-id: dht
+      name: temperature
+      value: 6
+  - set-control:
+      part-id: dht
+      name: humidity
+      value: 50
+  - delay: 2500ms
+  - wait-serial: 'SIM_SENSOR_OK T=6.0 H=50.0'
+  - set-control:
+      part-id: button
+      name: pressed
+      value: 1
+  - delay: 5500ms
+  - wait-serial: 'SIM_HOLD count=1'
+  - set-control:
+      part-id: button
+      name: pressed
+      value: 0
+  - wait-serial: 'SIM_RESOURCES'

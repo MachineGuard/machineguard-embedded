@@ -237,6 +237,14 @@ static void sampling_never_reuses_cached_frame() {
     CHECK(n.finishRead(2110,5,50,{}));CHECK(!n.finishRead(2111,5,50,{}));CHECK(n.pending()==1);
     CHECK(!n.beginRead(12109));CHECK(n.beginRead(12110));CHECK(n.finishRead(12120,6,51,{}));CHECK(n.pending()==2);
 }
+
+static void button_telemetry_distinguishes_short_from_hold() {
+    Node n(settings(),"telemetry",0);n.tick(100,true,false);n.tick(140,true,false);n.tick(200,false,false);n.tick(240,false,false);
+    CHECK(n.stats().shortPresses==1);CHECK(n.stats().longPresses==0);
+    n.tick(300,true,false);n.tick(340,true,false);n.tick(5339,true,false);CHECK(n.stats().longPresses==0);
+    n.tick(5340,true,false);CHECK(n.stats().longPresses==1);n.tick(6000,false,false);n.tick(6040,false,false);
+    CHECK(n.stats().shortPresses==1);CHECK(n.stats().longPresses==1);
+}
 int main() {
     const std::vector<std::pair<const char*,std::function<void()>>> tests={
         {"boot identity",identity},{"first sample",first_sample},{"frozen retry",frozen_retry},
@@ -250,7 +258,7 @@ int main() {
         {"capture equivalence",timestamp_receipt_equivalence},{"overflow local alarm",overflow_still_updates_local_alarm},
         {"unknown completion",unknown_completion_never_releases_sample},{"calendar/settings",timestamps_and_invalid_settings},
         {"bounded rejection evidence",rejected_evidence_is_bounded_and_preserved},{"largest identity",largest_edge_identity_serializes},{"HTTP framing",http_headers_boundaries},{"duplicate JSON",duplicate_json_cannot_confirm},{"retry wrap",retries_and_sampling_survive_millis_wrap},
-        {"all terminal outcomes",all_terminal_statuses_are_not_core_success},{"no sensor cache",sampling_never_reuses_cached_frame}};
+        {"all terminal outcomes",all_terminal_statuses_are_not_core_success},{"no sensor cache",sampling_never_reuses_cached_frame},{"button telemetry",button_telemetry_distinguishes_short_from_hold}};
     for(const auto& test:tests) {int before=failures;test.second();std::printf("%s %s\n",failures==before?"PASS":"FAIL",test.first);}
     std::printf("Sample bytes=%zu Node bytes=%zu\n",sizeof(Sample),sizeof(Node));
     std::printf("%zu cases, %d failures\n",tests.size(),failures);return failures?1:0;
