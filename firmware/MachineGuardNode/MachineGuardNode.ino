@@ -51,6 +51,8 @@ void setup() {
     if(config::EnableBuzzer)buzzerAttached=ledcAttach(config::BuzzerPin,4000,8);
     char bootId[65]{};bool resetKnown=false;uint32_t resetPending=0;
     const bool ready=identity(bootId,resetKnown,resetPending);
+    if(config::SimulationProfile && ready)Serial.printf("SIM_BOOT counter=%llu id=%s resetKnown=%u resetPending=%u\n",
+        static_cast<unsigned long long>(bootCounter),bootId,unsigned(resetKnown),unsigned(resetPending));
     const auto settings=config::nodeSettings();
     node=new(nodeMemory) mg::Node(settings,ready?bootId:"",millis(),0,resetKnown,resetPending);
     if(!ready)Serial.println("IDENTITY_STORAGE_ERROR: acquisition disabled");
