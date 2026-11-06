@@ -17,6 +17,7 @@ public:
     bool receive(SendResult& result);
     bool connected() const {return wifi_.load() && edge_.load();}
     CaptureTime captureTime() const;
+    uint32_t stackFreeMinimumBytes() const {return task_?uint32_t(uxTaskGetStackHighWaterMark(task_)):0;}
 private:
     static void entry(void* self);
     void run();

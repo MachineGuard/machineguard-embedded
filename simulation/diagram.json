@@ -1,0 +1,323 @@
+{
+  "version": 1,
+  "author": "MachineGuard",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "wokwi-esp32-devkit-v1",
+      "id": "esp",
+      "top": 0,
+      "left": 0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-dht22",
+      "id": "dht",
+      "top": -10,
+      "left": 240,
+      "attrs": {
+        "temperature": "5",
+        "humidity": "50"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "pullup",
+      "top": 90,
+      "left": 230,
+      "attrs": {
+        "value": "10000"
+      }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "button",
+      "top": 240,
+      "left": 220,
+      "attrs": {
+        "color": "black",
+        "bounce": "1"
+      }
+    },
+    {
+      "type": "wokwi-buzzer",
+      "id": "piezo",
+      "top": 320,
+      "left": 210,
+      "attrs": {
+        "volume": "0.1"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "piezoR",
+      "top": 340,
+      "left": 110,
+      "attrs": {
+        "value": "1000"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "green",
+      "top": 130,
+      "left": 300,
+      "attrs": {
+        "color": "green"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "greenR",
+      "top": 140,
+      "left": 210,
+      "attrs": {
+        "value": "220"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "amber",
+      "top": 160,
+      "left": 300,
+      "attrs": {
+        "color": "orange"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "amberR",
+      "top": 170,
+      "left": 210,
+      "attrs": {
+        "value": "220"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "red",
+      "top": 190,
+      "left": 300,
+      "attrs": {
+        "color": "red"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "redR",
+      "top": 200,
+      "left": 210,
+      "attrs": {
+        "value": "220"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "blue",
+      "top": 220,
+      "left": 300,
+      "attrs": {
+        "color": "blue"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "blueR",
+      "top": 230,
+      "left": 210,
+      "attrs": {
+        "value": "220"
+      }
+    },
+    {
+      "type": "wokwi-logic-analyzer",
+      "id": "logic",
+      "top": -100,
+      "left": 400,
+      "attrs": {}
+    }
+  ],
+  "connections": [
+    [
+      "esp:3V3",
+      "dht:VCC",
+      "red",
+      []
+    ],
+    [
+      "esp:GND.1",
+      "dht:GND",
+      "black",
+      []
+    ],
+    [
+      "esp:D4",
+      "dht:SDA",
+      "green",
+      []
+    ],
+    [
+      "esp:3V3",
+      "pullup:1",
+      "red",
+      []
+    ],
+    [
+      "pullup:2",
+      "dht:SDA",
+      "green",
+      []
+    ],
+    [
+      "esp:D14",
+      "button:1.l",
+      "blue",
+      []
+    ],
+    [
+      "button:2.l",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "esp:D32",
+      "piezoR:1",
+      "purple",
+      []
+    ],
+    [
+      "piezoR:2",
+      "piezo:2",
+      "purple",
+      []
+    ],
+    [
+      "piezo:1",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "esp:D25",
+      "greenR:1",
+      "green",
+      []
+    ],
+    [
+      "greenR:2",
+      "green:A",
+      "green",
+      []
+    ],
+    [
+      "green:C",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "esp:D26",
+      "amberR:1",
+      "orange",
+      []
+    ],
+    [
+      "amberR:2",
+      "amber:A",
+      "orange",
+      []
+    ],
+    [
+      "amber:C",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "esp:D27",
+      "redR:1",
+      "red",
+      []
+    ],
+    [
+      "redR:2",
+      "red:A",
+      "red",
+      []
+    ],
+    [
+      "red:C",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "esp:D33",
+      "blueR:1",
+      "blue",
+      []
+    ],
+    [
+      "blueR:2",
+      "blue:A",
+      "blue",
+      []
+    ],
+    [
+      "blue:C",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "esp:D25",
+      "logic:D0",
+      "gray",
+      []
+    ],
+    [
+      "esp:D26",
+      "logic:D1",
+      "gray",
+      []
+    ],
+    [
+      "esp:D27",
+      "logic:D2",
+      "gray",
+      []
+    ],
+    [
+      "esp:D33",
+      "logic:D3",
+      "gray",
+      []
+    ],
+    [
+      "esp:D14",
+      "logic:D4",
+      "gray",
+      []
+    ],
+    [
+      "esp:D32",
+      "logic:D5",
+      "gray",
+      []
+    ],
+    [
+      "esp:D4",
+      "logic:D6",
+      "gray",
+      []
+    ],
+    [
+      "esp:GND.1",
+      "logic:GND",
+      "black",
+      []
+    ]
+  ],
+  "dependencies": {}
+}

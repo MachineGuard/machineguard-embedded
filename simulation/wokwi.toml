@@ -1,0 +1,4 @@
+[wokwi]
+version = 1
+firmware = "../build/simulation-offline/MachineGuardNode.ino.bin"
+elf = "../build/simulation-offline/MachineGuardNode.ino.elf"
