@@ -1,0 +1,8 @@
+name: 'Wokwi network boot, NTP and first sample'
+version: 1
+author: 'MachineGuard'
+steps:
+  - wait-serial: 'PROFILE=SIMULATION_WOKWI_NETWORK'
+  - wait-serial: 'SIM_BOOT counter=1'
+  - wait-serial: 'SIM_NTP synced'
+  - wait-serial: 'SIM_SENSOR_OK'

@@ -35,5 +35,6 @@ HTTP sin TLS solo se permite con todas estas condiciones:
 ## Qué no existe todavía
 
 - No hay servicios de provisión, app móvil ni endpoint de emparejamiento (pairing).
-- No se usa Wokwi-GUEST ni un gateway público como atajo para probar. El perfil
-  operativo mantiene su política de contraseña, TLS y red dedicada.
+- El perfil operativo no usa Wokwi-GUEST ni un gateway público como atajo para probar.
+  Solo el perfil de simulación `MG_WOKWI_NETWORK_PROFILE` usa Wokwi-GUEST, con
+  su propia validación. Ver [simulación en Wokwi](simulacion-wokwi.md).

@@ -65,4 +65,5 @@ docs/                       Documentación detallada
 - [Hardware y señales](docs/hardware.md): pines, indicadores y Wokwi.
 - [Límites actuales](docs/limites.md): qué no está probado todavía.
 - [Simulación offline](simulation/README.md): perfil para Wokwi sin red.
+- [Simulación en Wokwi](docs/simulacion-wokwi.md): firmware real con red virtual, NTP y reinicio.
 - [Dependencias y licencias](THIRD_PARTY.md).
