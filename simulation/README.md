@@ -1,42 +1,66 @@
-# Perfil electrónico offline
+# Simulación offline (Wokwi)
 
-Este perfil no ejecuta red ni incluye secretos; activa el piezo opcional y
-telemetría de sensor, botón y recursos. Compilar desde la raíz:
+Este perfil no usa red ni secretos. Activa el piezo opcional y la telemetría del
+sensor, el botón y los recursos.
+
+## Compilar
+
+Desde la raíz del repositorio:
 
 ```powershell
 ./scripts/Build-Firmware.ps1 -OfflineSimulation
 ```
 
-El resultado queda en `build/simulation-offline/`. El build falla si hay
-`secrets.h`. No reutilices el perfil para operación ni añadas credenciales.
+El resultado queda en `build/simulation-offline/`. El build falla si existe
+`secrets.h`. No uses este perfil para operar el nodo ni le añadas credenciales.
 
-En Wokwi web, abre una plantilla ESP32 sin guardar, copia `diagram.json` de esta
-carpeta al editor y usa F1 → `Upload Firmware and Start Simulation` para cargar
-`MachineGuardNode.ino.bin`. No pulses Save ni Share. Este flujo ejecutó el binario
-multifichero compilado localmente sin cuenta. El botón Restart recompila el sketch
-del editor: para repetir el binario, vuelve a cargarlo con F1. Una ejecución nueva
-volvió a contador de arranque 1; no demuestra conservación NVS/RTC.
+## Cargar en Wokwi web
 
-Para Wokwi local/CI se necesita la licencia/token correspondiente; `wokwi.toml`
-señala el binario y `offline-scenario.yaml` prepara la automatización. Ese escenario
-YAML no fue ejecutado: la comprobación web se hizo con los controles del componente.
+1. Abre una plantilla ESP32 sin guardarla.
+2. Copia `diagram.json` de esta carpeta al editor.
+3. Usa F1 → `Upload Firmware and Start Simulation` para cargar `MachineGuardNode.ino.bin`.
+4. No pulses Save ni Share.
 
-`offline-scenario.yaml` prepara cambios reales del componente virtual DHT22 y
-pulsaciones cortas/largas. Serial permite contrastar adquisición, mute y hold;
-el VCD permite observar LEDs/piezo. Las marcas `tick_ms` son tiempo del ESP32
-virtual; mídelo aparte del tiempo de pared de la herramienta. `SIM_RESOURCES`
-expone heap libre/mínimo y mínimo de pila del loop en bytes. La tarea de IO no
-arranca en este perfil: `IO_STACK_NOT_STARTED=1` no es una medición de su pila.
+Este flujo no necesita cuenta. Ya se probó con el binario compilado en local, con
+varios archivos. El botón Restart recompila el sketch del editor. Para repetir el
+binario, vuelve a cargarlo con F1.
 
-La web ejecutó cambios de temperatura/humedad, pulsación corta/mute y hold, y
-fallo DHT al desconectar DATA en una copia del circuito. Restaurarlo en otra
-ejecución recuperó las lecturas. `SIM_BOOT` permite observar contador/identidad;
-sin NTP virtual, no se acredita sincronización de reloj ni reset con NVS conservada.
+En la prueba, una ejecución nueva volvió al contador de arranque 1. Por eso no
+demuestra que NVS o RTC conserven datos.
 
-Reinicio de simulación y reinicio de CPU pueden conservar memorias diferentes.
-Antes de afirmar persistencia, documenta qué conserva la herramienta: NVS,
-flash, RTC o ninguna. No equivalen a un apagado físico.
+Para Wokwi local o en CI hace falta la licencia o el token correspondiente.
+`wokwi.toml` indica el binario, y `offline-scenario.yaml` prepara la automatización.
+Ese escenario YAML no se ha ejecutado todavía. La comprobación en la web se hizo
+con los controles del componente.
 
-El perfil operativo mantiene su política de contraseña/TLS/red dedicada. No se
-habilita Wokwi-GUEST ni gateway público como atajo. El ensayo de backend del
-driver PC es distinto de un enlace ESP32 virtual→Edge, que sigue no probado.
+## Escenario automatizado
+
+`offline-scenario.yaml` cambia la temperatura y la humedad del DHT22 virtual, y
+simula pulsaciones cortas y largas.
+
+- Serial permite contrastar la adquisición, el silencio (mute) y la pulsación larga (hold).
+- El archivo VCD muestra los LED y el piezo.
+- Las marcas `tick_ms` son tiempo del ESP32 virtual. Mídelas aparte del tiempo
+  de pared de la herramienta.
+- `SIM_RESOURCES` muestra el heap libre y mínimo, y el mínimo de pila del loop, en bytes.
+- La tarea de IO no arranca en este perfil. `IO_STACK_NOT_STARTED=1` no es una
+  medida de su pila.
+
+## Qué se probó en la web
+
+- Cambios de temperatura y humedad, pulsación corta con mute, y pulsación larga.
+- Fallo del DHT al desconectar DATA en una copia del circuito. Al restaurarlo,
+  volvieron las lecturas.
+- `SIM_BOOT` muestra el contador y la identidad. Sin NTP virtual, no se acredita
+  la sincronización del reloj ni un reset con NVS conservada.
+
+## Persistencia
+
+Reiniciar la simulación y reiniciar la CPU pueden conservar memorias distintas.
+Antes de afirmar que algo persiste, documenta qué conserva la herramienta: NVS,
+flash, RTC o nada. Un reinicio de simulación no equivale a un apagado físico.
+
+## Límite
+
+El ensayo del backend con el driver de PC no equivale a un enlace ESP32 virtual
+con Edge. Ese enlace todavía no está probado.
