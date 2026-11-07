@@ -14,17 +14,19 @@ jobs:
     name: Native C++ unit tests
     runs-on: windows-2022
     timeout-minutes: 45
-    env:
-      MACHINEGUARD_EMBEDDED_TOOLS: ${{ runner.temp }}/embedded-tools
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
 
+      - name: Select isolated tools directory
+        shell: pwsh
+        run: Join-Path $env:RUNNER_TEMP 'embedded-tools' | ForEach-Object { "MACHINEGUARD_EMBEDDED_TOOLS=$_" } | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
       - name: Restore isolated tools cache
         uses: actions/cache@v6
         with:
-          path: ${{ env.MACHINEGUARD_EMBEDDED_TOOLS }}
+          path: ${{ runner.temp }}/embedded-tools
           key: embedded-tools-${{ runner.os }}-${{ hashFiles('scripts/Setup-Tools.ps1', 'firmware/MachineGuardNode/sketch.yaml') }}
 
       - name: Install pinned Arduino CLI, ESP32 core and libraries
@@ -64,17 +66,19 @@ jobs:
     name: ESP32 firmware build without secrets
     runs-on: windows-2022
     timeout-minutes: 60
-    env:
-      MACHINEGUARD_EMBEDDED_TOOLS: ${{ runner.temp }}/embedded-tools
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
 
+      - name: Select isolated tools directory
+        shell: pwsh
+        run: Join-Path $env:RUNNER_TEMP 'embedded-tools' | ForEach-Object { "MACHINEGUARD_EMBEDDED_TOOLS=$_" } | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
       - name: Restore isolated tools cache
         uses: actions/cache@v6
         with:
-          path: ${{ env.MACHINEGUARD_EMBEDDED_TOOLS }}
+          path: ${{ runner.temp }}/embedded-tools
           key: embedded-tools-${{ runner.os }}-${{ hashFiles('scripts/Setup-Tools.ps1', 'firmware/MachineGuardNode/sketch.yaml') }}
 
       - name: Install pinned Arduino CLI, ESP32 core and libraries
