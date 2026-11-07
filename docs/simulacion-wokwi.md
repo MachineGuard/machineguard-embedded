@@ -38,7 +38,8 @@ se sube a Git.
 | `edge-link` | Muestra enviada a un Edge local y guardada | `SIM_EDGE outcome=LocalPending` y fila en `GET /readings` |
 
 `edge-down` y `edge-link` necesitan el repositorio `machineguard-edge-api` al
-lado de este repositorio y la pasarela privada de Wokwi. Ver la sección siguiente.
+lado de este repositorio. Hoy fallan porque la pasarela privada no llega al
+simulador (ver la sección siguiente).
 
 ## Estado de la verificación
 
@@ -48,10 +49,17 @@ Probado con `wokwi-cli` v0.29.1 y el firmware compilado del perfil de red:
 - `reset`: aprobado. Reinicio por software real (`SW_CPU_RESET`) a los 45 s; el
   contador de NVS pasa de 1 a 2 y el segundo arranque reconoce el reinicio con
   `resetPending=5`, es decir, cinco muestras en RAM que se declaran perdidas.
-- `edge-link`: no completado. El ESP32 virtual no alcanza `host.wokwi.internal`
-  sin la pasarela privada, así que el firmware solo registra `SIM_EDGE outcome=Retry`.
-  El script se detiene con un error claro y para Edge.
-- `edge-down`: no ejecutado, depende de la misma pasarela.
+- `edge-link`: FALLA. El firmware solo registra `SIM_EDGE outcome=Retry`, nunca
+  `LocalPending`, y el escenario termina con código 1. Edge guardó 0 lecturas.
+- `edge-down`: FALLA. Con Edge apagado hay `SIM_EDGE outcome=Retry` (14 líneas) y
+  el firmware conserva la muestra en RAM. Al arrancar Edge no llega ningún
+  `LocalPending` en 240 s y Edge guardó 0 lecturas.
+
+La causa es que `wokwi-cli` 0.29.1 no soporta la pasarela privada. El binario no
+contiene ninguna clave de gateway, y `wokwigw` v2.0.1 (con su checksum verificado)
+no registró ningún cliente conectado. No hay mensaje de plan denegado. La
+última release de `wokwi-cli` es la misma v0.29.1 y no publica notas sobre la
+pasarela.
 
 La ruta Edge se comprobó aparte, con un Edge local y una petición con el formato
 del firmware: 201, `status=CALIBRATED`, `delivery=PENDING`,
@@ -65,9 +73,10 @@ compilando y `wokwi-cli lint` pasa.
 
 El ESP32 virtual no puede llegar a `127.0.0.1` de tu PC. La forma documentada de
 llegar a servicios del equipo es la pasarela privada de Wokwi (`wokwigw`), con
-`host.wokwi.internal`. Esa pasarela puede requerir plan de pago. Los escenarios
-`edge-down` y `edge-link` no se han ejecutado todavía; no los des por validados
-hasta tener su salida en el puerto serie y la fila en Edge.
+`host.wokwi.internal`. Esa pasarela puede requerir plan de pago. Con
+`wokwi-cli` 0.29.1 no hay forma de activarla desde la línea de comandos: ni
+`[net] gateway` en `wokwi.toml` ni otra clave tienen efecto. Mientras no haya
+una forma soportada, los escenarios `edge-down` y `edge-link` no pasan.
 
 Edge se arranca solo durante el escenario, con una clave administrativa generada
 para esa ejecución y una base SQLite dentro de `build/wokwi-sim/`. La credencial
