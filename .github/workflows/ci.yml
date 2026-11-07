@@ -140,3 +140,74 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "Lint failed for diagram.json with exit code $LASTEXITCODE" }
           & $exe lint --offline --warnings-as-errors simulation/diagram.json
           if ($LASTEXITCODE -ne 0) { throw "Lint failed for simulation/diagram.json with exit code $LASTEXITCODE" }
+
+  wokwi-token-check:
+    name: Check optional Wokwi token
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      available: ${{ steps.check.outputs.available }}
+    steps:
+      - id: check
+        env:
+          WOKWI_CLI_TOKEN: ${{ secrets.WOKWI_CLI_TOKEN }}
+        shell: bash
+        run: |
+          if [ -n "$WOKWI_CLI_TOKEN" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "WOKWI_CLI_TOKEN is not configured; Wokwi simulation job skipped." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  wokwi-simulation:
+    name: Wokwi simulation boot, NTP and reset
+    needs: wokwi-token-check
+    if: needs.wokwi-token-check.outputs.available == 'true'
+    runs-on: windows-2022
+    timeout-minutes: 30
+    env:
+      WOKWI_CLI_TOKEN: ${{ secrets.WOKWI_CLI_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Select isolated tools directory
+        shell: pwsh
+        run: Join-Path $env:RUNNER_TEMP 'embedded-tools' | ForEach-Object { "MACHINEGUARD_EMBEDDED_TOOLS=$_" } | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Restore isolated tools cache
+        uses: actions/cache@v6
+        with:
+          path: ${{ runner.temp }}/embedded-tools
+          key: embedded-tools-${{ runner.os }}-${{ hashFiles('scripts/Setup-Tools.ps1', 'firmware/MachineGuardNode/sketch.yaml') }}
+
+      - name: Install pinned Arduino CLI, ESP32 core and libraries
+        shell: pwsh
+        run: ./scripts/Setup-Tools.ps1 -ToolsRoot $env:MACHINEGUARD_EMBEDDED_TOOLS
+
+      - name: Download pinned Wokwi CLI
+        shell: pwsh
+        run: |
+          $exe = Join-Path $env:RUNNER_TEMP 'wokwi-cli-win-x64.exe'
+          Invoke-WebRequest -Uri 'https://github.com/wokwi/wokwi-cli/releases/download/v0.29.1/wokwi-cli-win-x64.exe' -OutFile $exe
+          $hash = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($hash -ne '45292e3c4f32ba4cfbcc7a457a6df48aad95fdb3269a218cb83423da9dc483b2') { throw 'Wokwi CLI v0.29.1 checksum mismatch.' }
+          "WOKWI_CLI_PATH=$exe" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Run boot and NTP scenario
+        shell: pwsh
+        run: ./scripts/wokwi-sim.ps1 -Action boot-ntp -ToolsRoot $env:MACHINEGUARD_EMBEDDED_TOOLS
+
+      - name: Run software reset scenario
+        shell: pwsh
+        run: ./scripts/wokwi-sim.ps1 -Action reset -ToolsRoot $env:MACHINEGUARD_EMBEDDED_TOOLS
+
+      - name: Upload Wokwi serial logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: wokwi-serial-logs
+          path: build/wokwi-sim/logs/*.serial.log
+          if-no-files-found: warn
