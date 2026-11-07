@@ -1,0 +1,7 @@
+name: 'Wokwi virtual ESP32 to local Edge through the private gateway'
+version: 1
+author: 'MachineGuard'
+steps:
+  - wait-serial: 'PROFILE=SIMULATION_WOKWI_NETWORK'
+  - wait-serial: 'SIM_NTP synced'
+  - wait-serial: 'SIM_EDGE outcome=LocalPending'

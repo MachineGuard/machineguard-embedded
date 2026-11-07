@@ -117,9 +117,12 @@ function Start-EdgeForSimulation([switch]$ResetDatabase) {
 }
 
 function Stop-EdgeForSimulation {
+    # The venv launcher starts the real interpreter as a child; stop the whole tree.
     if ($script:EdgeProcess -and -not $script:EdgeProcess.HasExited) {
-        Stop-Process -Id $script:EdgeProcess.Id -Force
-        Write-Output "Stopped Edge process $($script:EdgeProcess.Id)."
+        $children = @(Get-CimInstance Win32_Process -Filter "ParentProcessId=$($script:EdgeProcess.Id)" -ErrorAction SilentlyContinue)
+        foreach ($child in $children) { Stop-Process -Id $child.ProcessId -Force -ErrorAction SilentlyContinue }
+        Stop-Process -Id $script:EdgeProcess.Id -Force -ErrorAction SilentlyContinue
+        Write-Output "Stopped Edge process $($script:EdgeProcess.Id) and $($children.Count) child process(es)."
     }
     $script:EdgeProcess = $null
 }
@@ -147,7 +150,9 @@ function Invoke-WokwiRun([string]$ScenarioName, [string]$SerialLog, [switch]$Bac
     if ($ScenarioName) { $arguments += @('--scenario', (Join-Path $simDir $ScenarioName)) }
     $arguments += $simDir
     if ($Background) {
-        return Start-Process -FilePath $WokwiCli -ArgumentList $arguments -PassThru -WindowStyle Hidden `
+        # Start-Process splits arguments on spaces, so quote the ones that contain them.
+        $quoted = @($arguments | ForEach-Object { if ($_ -match '\s') { "`"$_`"" } else { $_ } })
+        return Start-Process -FilePath $WokwiCli -ArgumentList $quoted -PassThru -WindowStyle Hidden `
             -RedirectStandardOutput (Join-Path $logDir 'wokwi.out.log') -RedirectStandardError (Join-Path $logDir 'wokwi.err.log')
     }
     & $WokwiCli @arguments | Out-Host
@@ -197,7 +202,7 @@ try {
             Build-SimulationFirmware
             Start-EdgeForSimulation
             $log = Join-Path $logDir 'edge-link.serial.log'
-            $code = Invoke-WokwiRun -ScenarioName 'boot-ntp.yaml' -SerialLog $log
+            $code = Invoke-WokwiRun -ScenarioName 'edge-link.yaml' -SerialLog $log
             if ($code -ne 0) { throw "edge-link run failed with exit code $code" }
             if (-not (Select-String -LiteralPath $log -SimpleMatch 'SIM_EDGE outcome=LocalPending' -Quiet)) { throw 'No LocalPending result in the serial log.' }
             Write-Output "Stored readings for ESP32-SIM-01: $(Get-StoredReadingCount)"
