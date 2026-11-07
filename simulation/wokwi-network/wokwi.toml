@@ -1,0 +1,4 @@
+[wokwi]
+version = 1
+firmware = "../../build/wokwi-network/MachineGuardNode.ino.bin"
+elf = "../../build/wokwi-network/MachineGuardNode.ino.elf"

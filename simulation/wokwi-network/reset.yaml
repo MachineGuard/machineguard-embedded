@@ -1,0 +1,9 @@
+name: 'Wokwi software reset with NVS counter and RTC checkpoint'
+version: 1
+author: 'MachineGuard'
+steps:
+  - wait-serial: 'SIM_BOOT counter=1'
+  - wait-serial: 'SIM_RESTART software reset'
+  - wait-serial: 'SIM_BOOT counter=2'
+  - wait-serial: 'resetKnown=1'
+  - wait-serial: 'RESET_RAM_DISCARDED='
