@@ -1,0 +1,138 @@
+name: CI
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [main, develop, "feature/**"]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  native-tests:
+    name: Native C++ unit tests
+    runs-on: windows-2022
+    timeout-minutes: 45
+    env:
+      MACHINEGUARD_EMBEDDED_TOOLS: ${{ runner.temp }}/embedded-tools
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Restore isolated tools cache
+        uses: actions/cache@v6
+        with:
+          path: ${{ env.MACHINEGUARD_EMBEDDED_TOOLS }}
+          key: embedded-tools-${{ runner.os }}-${{ hashFiles('scripts/Setup-Tools.ps1', 'firmware/MachineGuardNode/sketch.yaml') }}
+
+      - name: Install pinned Arduino CLI, ESP32 core and libraries
+        shell: pwsh
+        run: ./scripts/Setup-Tools.ps1 -ToolsRoot $env:MACHINEGUARD_EMBEDDED_TOOLS
+
+      - name: Run native tests with MSVC x64
+        shell: pwsh
+        run: |
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+          $vcvars = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -find 'VC\Auxiliary\Build\vcvars64.bat' | Select-Object -First 1
+          if (-not $vcvars) { throw 'Visual Studio C++ x64 tools were not found on the runner.' }
+          New-Item -ItemType Directory -Path build/native -Force | Out-Null
+          & ./scripts/Test-Native.ps1 -VcVarsPath $vcvars *> build/native/native-tests.log
+          $code = $LASTEXITCODE
+          Get-Content build/native/native-tests.log
+          if ($code -ne 0) { throw "Native tests failed with exit code $code" }
+
+      - name: Summarize native test results
+        if: always()
+        shell: pwsh
+        run: |
+          if (Test-Path build/native/native-tests.log) {
+            $summary = Select-String -Path build/native/native-tests.log -Pattern '\d+ cases, \d+ failures' | Select-Object -Last 1
+            "Native tests: $($summary.Line)" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+          }
+
+      - name: Upload native test log
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: native-test-results
+          path: build/native/native-tests.log
+          if-no-files-found: warn
+
+  firmware-build:
+    name: ESP32 firmware build without secrets
+    runs-on: windows-2022
+    timeout-minutes: 60
+    env:
+      MACHINEGUARD_EMBEDDED_TOOLS: ${{ runner.temp }}/embedded-tools
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Restore isolated tools cache
+        uses: actions/cache@v6
+        with:
+          path: ${{ env.MACHINEGUARD_EMBEDDED_TOOLS }}
+          key: embedded-tools-${{ runner.os }}-${{ hashFiles('scripts/Setup-Tools.ps1', 'firmware/MachineGuardNode/sketch.yaml') }}
+
+      - name: Install pinned Arduino CLI, ESP32 core and libraries
+        shell: pwsh
+        run: ./scripts/Setup-Tools.ps1 -ToolsRoot $env:MACHINEGUARD_EMBEDDED_TOOLS
+
+      - name: Build standard profile with example configuration
+        shell: pwsh
+        run: |
+          & ./scripts/Build-Firmware.ps1 -ToolsRoot $env:MACHINEGUARD_EMBEDDED_TOOLS
+          if ($LASTEXITCODE -ne 0) { throw "Standard firmware build failed with exit code $LASTEXITCODE" }
+
+      - name: Build offline simulation profile
+        shell: pwsh
+        run: |
+          & ./scripts/Build-Firmware.ps1 -ToolsRoot $env:MACHINEGUARD_EMBEDDED_TOOLS -OfflineSimulation
+          if ($LASTEXITCODE -ne 0) { throw "Offline simulation build failed with exit code $LASTEXITCODE" }
+
+      - name: Record firmware sizes and digests
+        shell: pwsh
+        run: |
+          $files = @('build/esp32/MachineGuardNode.ino.bin', 'build/simulation-offline/MachineGuardNode.ino.bin')
+          $lines = @('| Artifact | Bytes | SHA-256 |', '|---|---:|---|')
+          foreach ($file in $files) {
+            $item = Get-Item -LiteralPath $file
+            $hash = (Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash.ToLowerInvariant()
+            $lines += "| $file | $($item.Length) | $hash |"
+          }
+          $lines | Out-File -FilePath build/firmware-sizes.md -Encoding utf8
+          $lines | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+
+      - name: Upload firmware build outputs
+        uses: actions/upload-artifact@v7
+        with:
+          name: firmware-build
+          path: |
+            build/esp32/MachineGuardNode.ino.bin
+            build/simulation-offline/MachineGuardNode.ino.bin
+            build/firmware-sizes.md
+          if-no-files-found: error
+
+  circuit-lint:
+    name: Wokwi circuit lint offline
+    runs-on: windows-2022
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Download pinned Wokwi CLI and lint both diagrams
+        shell: pwsh
+        run: |
+          $exe = Join-Path $env:RUNNER_TEMP 'wokwi-cli-win-x64.exe'
+          Invoke-WebRequest -Uri 'https://github.com/wokwi/wokwi-cli/releases/download/v0.29.1/wokwi-cli-win-x64.exe' -OutFile $exe
+          $hash = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($hash -ne '45292e3c4f32ba4cfbcc7a457a6df48aad95fdb3269a218cb83423da9dc483b2') { throw 'Wokwi CLI v0.29.1 checksum mismatch.' }
+          & $exe lint --offline --warnings-as-errors diagram.json
+          if ($LASTEXITCODE -ne 0) { throw "Lint failed for diagram.json with exit code $LASTEXITCODE" }
+          & $exe lint --offline --warnings-as-errors simulation/diagram.json
+          if ($LASTEXITCODE -ne 0) { throw "Lint failed for simulation/diagram.json with exit code $LASTEXITCODE" }
