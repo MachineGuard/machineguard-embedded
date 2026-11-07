@@ -102,6 +102,17 @@ static void secure_network() {
     config.host="192.168.4.2";CHECK(validNetwork(config));config.host="203.0.113.1";CHECK(!validNetwork(config));
     config.host="192.168.4.2";config.password="";CHECK(!validNetwork(config));
 }
+static void wokwi_simulation_policy_is_isolated() {
+    std::string key=std::string("mgn_")+std::string(43,'x');NetworkSettings sim;
+    sim.enabled=true;sim.wokwiGateway=true;sim.tls=false;sim.host="host.wokwi.internal";sim.port=5000;
+    sim.ssid="Wokwi-GUEST";sim.password="";sim.credential=key.c_str();
+    CHECK(validNetwork(sim));
+    sim.password="fictitious-test-password";CHECK(!validNetwork(sim));sim.password="";
+    sim.host="edge.bank.example";CHECK(!validNetwork(sim));sim.host="host.wokwi.internal";
+    sim.tls=true;CHECK(!validNetwork(sim));sim.tls=false;
+    sim.ssid="private-bank";CHECK(!validNetwork(sim));sim.ssid="Wokwi-GUEST";
+    sim.wokwiGateway=false;CHECK(!validNetwork(sim));
+}
 static void maximum_queue_and_inflight_ownership() {
     Node n(settings(),"bootA",0);acquire(n,2100);Sample snapshot{};uint32_t ticket=0;CHECK(n.beginSend(2100,snapshot,ticket));
     for(uint32_t i=1;i<=60;++i)acquire(n,2100+i*10000);
@@ -249,7 +260,7 @@ int main() {
     const std::vector<std::pair<const char*,std::function<void()>>> tests={
         {"boot identity",identity},{"first sample",first_sample},{"frozen retry",frozen_retry},
         {"local receipt",local_is_not_core},{"sensor failure",no_fake_sensor},{"receipt local",receipt_local},{"receipt confirmed",receipt_confirmed},
-        {"terminal receipts",receipt_terminals},{"malformed receipts",receipt_no_evidence},{"transient errors",transient_errors},{"reset losses",reset_losses},{"secure network",secure_network},
+        {"terminal receipts",receipt_terminals},{"malformed receipts",receipt_no_evidence},{"transient errors",transient_errors},{"reset losses",reset_losses},{"secure network",secure_network},{"wokwi simulation policy",wokwi_simulation_policy_is_isolated},
         {"bounded queue ownership",maximum_queue_and_inflight_ownership},{"terminal isolation",terminal_unblocks_queue},
         {"backoff auth",backoff_and_auth_retain_identity},{"NTP rollback",ntp_and_rollback},
         {"debounce and mute",debounce_short_cooldown_and_mute},{"button wrap",long_press_and_millis_wrap},

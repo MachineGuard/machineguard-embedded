@@ -19,6 +19,7 @@ uint64_t bootCounter=0;
 bool ioEnabled=false,buzzerAttached=false,previousBuzzer=false;
 uint32_t lastSummary=0;
 uint64_t previousShortPresses=0,previousLongPresses=0;
+bool ntpReported=false;
 
 bool identity(char (&id)[65],bool& resetKnown,uint32_t& resetPending) {
     Preferences store;
@@ -41,11 +42,27 @@ void rememberPending() {
     retained.bootCounter=next.bootCounter;retained.pending=next.pending;retained.checksum=next.checksum;
     retained.magic=next.magic; // Commit last. An interrupted update is reported as unknown.
 }
+const char* outcomeName(mg::Outcome outcome) {
+    switch(outcome) {
+        case mg::Outcome::Retry: return "Retry";
+        case mg::Outcome::AuthRetry: return "AuthRetry";
+        case mg::Outcome::InvalidReceipt: return "InvalidReceipt";
+        case mg::Outcome::LocalPending: return "LocalPending";
+        case mg::Outcome::Confirmed: return "Confirmed";
+        case mg::Outcome::Discarded: return "Discarded";
+        case mg::Outcome::Quarantined: return "Quarantined";
+        case mg::Outcome::EdgeOverflow: return "EdgeOverflow";
+        case mg::Outcome::InvalidSample: return "InvalidSample";
+        case mg::Outcome::Conflict: return "Conflict";
+    }
+    return "Unknown";
+}
 }
 
 void setup() {
     Serial.begin(115200);
-    if(config::SimulationProfile)Serial.println("PROFILE=SIMULATION_OFFLINE; no network or real credentials");
+    if(config::OfflineProfile)Serial.println("PROFILE=SIMULATION_OFFLINE; no network or real credentials");
+    if(config::WokwiNetworkProfile)Serial.println("PROFILE=SIMULATION_WOKWI_NETWORK; simulation only, not for operation");
     for(int pin:{config::GreenPin,config::AmberPin,config::RedPin,config::BluePin,config::BuzzerPin}) {pinMode(pin,OUTPUT);digitalWrite(pin,LOW);}
     pinMode(config::ButtonPin,INPUT_PULLUP);dht.begin();
     if(config::EnableBuzzer)buzzerAttached=ledcAttach(config::BuzzerPin,4000,8);
@@ -71,7 +88,13 @@ void loop() {
     node->tick(now,digitalRead(config::ButtonPin)==LOW,io.connected());
     if(!ioEnabled && !node->pairing())node->requestPairing(now);
     mg::SendResult result;
-    if(io.receive(result))node->complete(now,result.ticket,result.outcome);
+    if(io.receive(result)) {
+        node->complete(now,result.ticket,result.outcome);
+        if(config::SimulationProfile)Serial.printf("SIM_EDGE outcome=%s ticket=%u tick_ms=%u\n",outcomeName(result.outcome),unsigned(result.ticket),unsigned(now));
+    }
+    if(config::SimulationProfile && !ntpReported && io.captureTime().valid) {
+        ntpReported=true;Serial.printf("SIM_NTP synced epoch_ms=%lld tick_ms=%u\n",static_cast<long long>(io.captureTime().epochMs),unsigned(now));
+    }
     if(node->beginRead(now)) {
         // One physical DHT transaction. Humidity comes from that same frame, not a second sample.
         const float temperature=dht.readTemperature(false,true);
@@ -92,6 +115,11 @@ void loop() {
     digitalWrite(config::RedPin,lights.red);digitalWrite(config::BluePin,lights.blue);
     if(buzzerAttached && lights.buzzer!=previousBuzzer) {ledcWriteTone(config::BuzzerPin,lights.buzzer?4000:0);previousBuzzer=lights.buzzer;}
     if(node->valid())rememberPending();
+    // Simulation only: one software reset on the first boot, after the RTC checkpoint is committed.
+    if(config::SimRestartAfterMs && bootCounter==1 && now>=config::SimRestartAfterMs) {
+        Serial.printf("SIM_RESTART software reset at tick_ms=%u\n",unsigned(now));Serial.flush();
+        esp_restart();
+    }
     if(config::SimulationProfile) {
         const auto& stats=node->stats();
         if(previousShortPresses!=stats.shortPresses) {previousShortPresses=stats.shortPresses;Serial.printf("SIM_SHORT count=%llu buzzer=%u\n",static_cast<unsigned long long>(previousShortPresses),unsigned(lights.buzzer));}
