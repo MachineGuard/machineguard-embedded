@@ -1,0 +1,38 @@
+# Registro serie del nodo fisico MachineGuard
+# Fecha: 2026-11-24 | Placa: ESP32 DevKit V1 (CP2102, COM7) | Firmware: machineguard-embedded main, perfil de prueba sin red (-OfflineSimulation)
+# Sensor DHT22 en D4. Sin secrets.h: no hay Wi-Fi ni credenciales.
+PROFILE=SIMULATION_OFFLINE; no network or real credentials
+SIM_BOOT counter=3 id=<redactado: incluye la MAC de la placa> resetKnown=0 resetPending=0
+RESET_RAM_LOSS=UNKNOWN; payloads are not persisted
+NETWORK_DISABLED_OR_UNPROVISIONED
+SIM_SENSOR_OK T=30.2 H=70.6 tick_ms=2123
+RAM=1 LOCAL_PENDING=0 CORE_CONFIRMED=0 RAM_OVERFLOW=0 TERMINAL=0
+SIM_RESOURCES heap_free=272232 heap_min=240572 loop_stack_min_bytes=5804 IO_STACK_NOT_STARTED=1
+RAM=1 LOCAL_PENDING=0 CORE_CONFIRMED=0 RAM_OVERFLOW=0 TERMINAL=0
+SIM_RESOURCES heap_free=272232 heap_min=240572 loop_stack_min_bytes=5804 IO_STACK_NOT_STARTED=1
+SIM_SENSOR_OK T=30.2 H=70.1 tick_ms=12129
+RAM=2 LOCAL_PENDING=0 CORE_CONFIRMED=0 RAM_OVERFLOW=0 TERMINAL=0
+SIM_RESOURCES heap_free=272232 heap_min=240572 loop_stack_min_bytes=5804 IO_STACK_NOT_STARTED=1
+RAM=2 LOCAL_PENDING=0 CORE_CONFIRMED=0 RAM_OVERFLOW=0 TERMINAL=0
+SIM_RESOURCES heap_free=272232 heap_min=240572 loop_stack_min_bytes=5804 IO_STACK_NOT_STARTED=1
+SIM_SENSOR_OK T=30.1 H=69.4 tick_ms=22135
+RAM=3 LOCAL_PENDING=0 CORE_CONFIRMED=0 RAM_OVERFLOW=0 TERMINAL=0
+SIM_RESOURCES heap_free=272232 heap_min=240572 loop_stack_min_bytes=5804 IO_STACK_NOT_STARTED=1
+RAM=3 LOCAL_PENDING=0 CORE_CONFIRMED=0 RAM_OVERFLOW=0 TERMINAL=0
+SIM_RESOURCES heap_free=272232 heap_min=240572 loop_stack_min_bytes=5804 IO_STACK_NOT_STARTED=1
+SIM_SENSOR_OK T=30.1 H=69.3 tick_ms=32141
+
+
+# Prueba del pulsador (D14), capturada el mismo dia con el mismo firmware
+SIM_SHORT count=29 buzzer=0
+SIM_SHORT count=30 buzzer=0
+SIM_SENSOR_OK T=30.3 H=68.6 tick_ms=923514
+SIM_SHORT count=31 buzzer=0
+SIM_SENSOR_OK T=30.3 H=68.7 tick_ms=925620
+SIM_HOLD count=5
+
+# Indicadores observados en la placa (inspeccion visual)
+# Azul (D33): parpadeo rapido continuo, modo vinculacion por falta de red
+# Amarillo (D26): parpadeo de ~1 s, sin enlace con Edge
+# Rojo (D27): fijo al desconectar la senal del DHT22 de D4; se apaga al reconectar
+# Verde (D25): no aplica sin red; requiere enlace con Edge

@@ -4,9 +4,10 @@ Esto es lo que **no** está comprobado todavía. No lo tomes como funcionando.
 
 ## Hardware y red
 
-- No hay pruebas con hardware físico: ni sensor real, ni montaje, ni banco de pruebas.
-- Wi-Fi, TLS, NTP y la persistencia de NVS entre reinicios de CPU siguen pendientes
-  de un banco adecuado.
+- Sobre hardware físico solo se probó el nodo sin red: lectura del DHT22, pulsador
+  y LEDs azul, amarillo y rojo. Ver [banco físico](banco-fisico.md).
+- El enlace con Edge, el LED verde, Wi-Fi, TLS, NTP y la persistencia de NVS entre
+  reinicios de CPU siguen pendientes sobre hardware.
 - La red virtual pública de Wokwi no llega a un Edge local.
 - El driver de PC demuestra el contrato con el backend, pero no demuestra la
   comunicación Wi-Fi de un ESP32 virtual ni un enlace virtual con Edge.
