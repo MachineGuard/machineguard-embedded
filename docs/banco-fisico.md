@@ -89,6 +89,8 @@ Prueba del 26/11/2026 con el firmware normal, sin Core.
 | Cola del nodo | `RAM=0`. `LOCAL_PENDING` sube con cada acuse de Edge |
 | LED verde (D25) | Encendido fijo. El azul y el amarillo se apagan |
 
+![Nodo físico armado en protoboard con el LED verde encendido durante el enlace con Edge](evidencia/banco-edge-2026-11-26.jpg)
+
 La evidencia está en [evidencia/edge-banco-2026-11-26.txt](evidencia/edge-banco-2026-11-26.txt).
 El `bootId` de cada `sampleId` quedó redactado porque incluye la MAC de la placa.
 
