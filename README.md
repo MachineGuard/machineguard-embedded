@@ -5,8 +5,8 @@ DevKit V1 de 30 pines con un sensor DHT22. Mide temperatura y humedad cada 10 s 
 muestra a Edge usando solo la credencial de su nodo. Edge guarda las lecturas y
 las envía a Core.
 
-El nodo ya se probó sobre hardware físico, pero solo sin red: sensor, pulsador y
-LEDs. Ver [banco físico](docs/banco-fisico.md). Lo que falta probar se describe en
+El nodo ya se probó sobre hardware físico: sensor, pulsador, LEDs y envío de
+lecturas a Edge por Wi-Fi, todavía sin Core. Ver [banco físico](docs/banco-fisico.md). Lo que falta probar se describe en
 [límites actuales](docs/limites.md).
 
 ## Compilar y probar

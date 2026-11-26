@@ -1,7 +1,9 @@
 # Banco físico
 
-Primera prueba del firmware sobre hardware real, el 24/11/2026. El nodo se armó en
-protoboard y se probó **sin red**: no hay `secrets.h`, Wi-Fi ni enlace con Edge.
+Pruebas del firmware sobre hardware real. El nodo se armó en protoboard.
+
+- **24/11/2026:** prueba **sin red**, sin `secrets.h`. Sensor, pulsador y LEDs.
+- **26/11/2026:** enlace por Wi-Fi con Edge, sin Core. Ver [Enlace con Edge](#enlace-con-edge).
 
 ## Componentes
 
@@ -52,18 +54,62 @@ la pata larga comparten una fila, y la pata corta y la resistencia comparten la 
 | LED azul (D33) | Parpadeo rápido continuo: sin red, el nodo se mantiene en modo vinculación |
 | LED amarillo (D26) | Parpadeo de aproximadamente 1 s: sin enlace con Edge |
 | LED rojo (D27) | Fijo al desconectar la señal del DHT22 de D4; se apaga al reconectarla |
-| LED verde (D25) | No probado: solo enciende con enlace con Edge |
+| LED verde (D25) | Probado el 26/11 con el enlace con Edge: encendido fijo. Ver abajo |
 
 El registro serie está en [evidencia/registro-serie-banco-2026-11-24.txt](evidencia/registro-serie-banco-2026-11-24.txt).
 El identificador de arranque quedó redactado porque incluye la MAC de la placa.
+
+## Enlace con Edge
+
+Prueba del 26/11/2026 con el firmware normal, sin Core.
+
+### Configuración
+
+- **Red:** zona con cobertura móvil de Windows, dedicada al banco, con contraseña
+  (WPA2) y en 2,4 GHz. La laptop tiene la IP `192.168.137.1` en esa red.
+- **Edge:** corre en la laptop con `EDGE_BIND_HOST=192.168.137.1`, así que solo
+  escucha en la red del banco. No tiene `MACHINEGUARD_API_URL`.
+- **Nodo:** se registró en Edge como `ESP32-BANCO-01`, con un intervalo de 10 s,
+  mediante `POST /api/v1/edge/sensor-nodes`.
+- **Credenciales:** la credencial del nodo se copió directamente a `secrets.h`,
+  que no se publica. La clave administrativa y la base de Edge quedaron fuera del
+  repositorio.
+- **Firmware:** se compiló con HTTP de banco dedicado: `MG_EDGE_TLS=false`,
+  `MG_DEDICATED_BANK_HTTP=true` y `MG_EDGE_HOST` con la IP privada. NTP queda
+  vacío, así que el firmware omite `capturedAt` y Edge asigna la hora.
+
+### Resultados
+
+| Prueba | Resultado |
+|---|---|
+| Conexión Wi-Fi | El nodo se unió a la red del banco (IP `192.168.137.147`) |
+| Estado en Edge | `ESP32-BANCO-01` aparece `ONLINE` |
+| Lecturas | Una cada 10 s, unos 29,6 °C y 71–73 % de humedad, con estado `CALIBRATED` y `LOCAL_COMMITTED` |
+| Entrega a Core | `PENDING`, como se espera: no hay Core configurado |
+| Cola del nodo | `RAM=0`. `LOCAL_PENDING` sube con cada acuse de Edge |
+| LED verde (D25) | Encendido fijo. El azul y el amarillo se apagan |
+
+La evidencia está en [evidencia/edge-banco-2026-11-26.txt](evidencia/edge-banco-2026-11-26.txt).
+El `bootId` de cada `sampleId` quedó redactado porque incluye la MAC de la placa.
+
+### Problema encontrado: la banda de 5 GHz
+
+Con el firmware cargado, el nodo no se conectaba: `RAM=` subía y `LOCAL_PENDING`
+seguía en 0. Un escaneo desde la placa mostró que no veía la red del banco.
+
+La laptop estaba conectada al Wi-Fi de la casa por 5 GHz, y Windows emitía la
+zona con cobertura en esa misma banda. La ESP32 solo usa 2,4 GHz. Se resolvió
+cambiando la banda preferida del adaptador Wi-Fi a 2,4 GHz y reiniciando la zona.
 
 ## Observaciones
 
 - En una prueba se contaron unas 23 pulsaciones cortas en 6 s. Falta confirmar si
   el pulsador rebota y una pulsación se cuenta varias veces.
 - La temperatura no se contrastó con un termómetro de referencia.
+- El firmware no informa por el puerto serie si el Wi-Fi está conectado. Para
+  diagnosticarlo hubo que cargar temporalmente un escáner de redes.
 
 ## Pendiente
 
-- Enlace Wi-Fi con Edge usando la credencial del nodo, y el LED verde.
+- Entrega de Edge a Core con la credencial del gateway (`CORE_CONFIRMED`).
 - TLS, NTP y persistencia de NVS entre reinicios sobre hardware.

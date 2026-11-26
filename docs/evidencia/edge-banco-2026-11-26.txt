@@ -1,0 +1,93 @@
+# Enlace del nodo fisico con Edge - 2026-11-26
+# Red: zona con cobertura de Windows dedicada (2,4 GHz, WPA2). Edge escucha solo en 192.168.137.1:5000, sin Core configurado.
+# Firmware normal con secrets.h local (no publicado). El bootId de cada sampleId esta redactado porque incluye la MAC de la placa.
+
+## GET /api/v1/edge/sensor-nodes
+{
+  "deviceCode": "ESP32-BANCO-01",
+  "lastSeenAt": "2026-11-26T05:39:58.915794Z",
+  "samplingIntervalSeconds": 10,
+  "status": "ONLINE"
+}
+
+## GET /api/v1/edge/readings?limit=5
+[
+  {
+    "calibratedHumidity": 73.2,
+    "calibratedTemperature": 29.6,
+    "capturedAt": "2026-11-26T05:39:58.915794Z",
+    "delivery": "PENDING",
+    "deviceCode": "ESP32-BANCO-01",
+    "id": 9,
+    "persistence": "LOCAL_COMMITTED",
+    "rawHumidity": 73.2,
+    "rawTemperature": 29.6,
+    "receivedAt": "2026-11-26T05:39:58.915794Z",
+    "sampleId": "<bootId redactado>-8",
+    "status": "CALIBRATED"
+  },
+  {
+    "calibratedHumidity": 73.2,
+    "calibratedTemperature": 29.6,
+    "capturedAt": "2026-11-26T05:39:48.912919Z",
+    "delivery": "PENDING",
+    "deviceCode": "ESP32-BANCO-01",
+    "id": 8,
+    "persistence": "LOCAL_COMMITTED",
+    "rawHumidity": 73.2,
+    "rawTemperature": 29.6,
+    "receivedAt": "2026-11-26T05:39:48.912919Z",
+    "sampleId": "<bootId redactado>-7",
+    "status": "CALIBRATED"
+  },
+  {
+    "calibratedHumidity": 72.8,
+    "calibratedTemperature": 29.6,
+    "capturedAt": "2026-11-26T05:39:38.908529Z",
+    "delivery": "PENDING",
+    "deviceCode": "ESP32-BANCO-01",
+    "id": 7,
+    "persistence": "LOCAL_COMMITTED",
+    "rawHumidity": 72.8,
+    "rawTemperature": 29.6,
+    "receivedAt": "2026-11-26T05:39:38.908529Z",
+    "sampleId": "<bootId redactado>-6",
+    "status": "CALIBRATED"
+  },
+  {
+    "calibratedHumidity": 72.0,
+    "calibratedTemperature": 29.6,
+    "capturedAt": "2026-11-26T05:39:28.903135Z",
+    "delivery": "PENDING",
+    "deviceCode": "ESP32-BANCO-01",
+    "id": 6,
+    "persistence": "LOCAL_COMMITTED",
+    "rawHumidity": 72.0,
+    "rawTemperature": 29.6,
+    "receivedAt": "2026-11-26T05:39:28.903135Z",
+    "sampleId": "<bootId redactado>-5",
+    "status": "CALIBRATED"
+  },
+  {
+    "calibratedHumidity": 72.1,
+    "calibratedTemperature": 29.6,
+    "capturedAt": "2026-11-26T05:39:18.899324Z",
+    "delivery": "PENDING",
+    "deviceCode": "ESP32-BANCO-01",
+    "id": 5,
+    "persistence": "LOCAL_COMMITTED",
+    "rawHumidity": 72.1,
+    "rawTemperature": 29.6,
+    "receivedAt": "2026-11-26T05:39:18.899324Z",
+    "sampleId": "<bootId redactado>-4",
+    "status": "CALIBRATED"
+  }
+]
+
+## Puerto serie del nodo
+RAM=0 LOCAL_PENDING=9 CORE_CONFIRMED=0 RAM_OVERFLOW=0 TERMINAL=0
+RAM=0 LOCAL_PENDING=10 CORE_CONFIRMED=0 RAM_OVERFLOW=0 TERMINAL=0
+RAM=0 LOCAL_PENDING=10 CORE_CONFIRMED=0 RAM_OVERFLOW=0 TERMINAL=0
+
+# LED verde (D25): encendido fijo con el enlace activo (inspeccion visual).
+
